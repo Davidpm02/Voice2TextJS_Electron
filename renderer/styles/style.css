@@ -1,5 +1,6 @@
 body {
     background-color: #1e1e1e;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
 .title {
@@ -8,12 +9,15 @@ body {
     font-weight: bold;
     text-align: center;
     margin-top: 2rem;
+    transition: color 0.3s ease-in-out;
+    font-family: 'Poppins', sans-serif;
 }
 
 .header {
-    background-color: #2d2d2d;
+    background-color: #F49D96;
     padding: 1rem;
     border-radius: 1rem;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
 .container {
@@ -65,18 +69,31 @@ body {
     right: 10px;
 }
 
-
 /* Estilos para el modo claro */
 .light_mode {
     background-color: #fff;
     color: #000;
 }
 
+.light_mode .header {
+    background-color: #F34235;
+}
 
+.light_mode .title {
+    color: #000;
+}
 
 /* Estilos para el modo oscuro */
 .dark_mode {
     background-color: #1e1e1e;
+    color: #fff;
+}
+
+.dark_mode .header {
+    background-color: #F49D96;
+}
+
+.dark_mode .title {
     color: #fff;
 }
 
