@@ -1,0 +1,24 @@
+{
+  "name": "voice2textjs_electron",
+  "version": "1.0.0",
+  "description": "App de escritorio que facilita al usuario la transcripción de audio directa mediante el uso de Whisper.cpp.",
+  "homepage": "https://github.com/Davidpm02/Voice2TextJS_Electron#readme",
+  "bugs": {
+    "url": "https://github.com/Davidpm02/Voice2TextJS_Electron/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Davidpm02/Voice2TextJS_Electron.git"
+  },
+  "license": "ISC",
+  "author": "David Padilla Muñoz",
+  "type": "commonjs",
+  "main": "main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "electron": "^35.0.2"
+  }
+}
