@@ -1,0 +1,17 @@
+body {
+    background-color: #1e1e1e;
+}
+
+.title {
+    color: #fff;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.header {
+    background-color: #2d2d2d;
+    padding: 1rem;
+    border-radius: 1rem;
+}

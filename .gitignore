@@ -134,3 +134,10 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+# Build del modelo Whisper.cpp compilado
+whisper.cpp/
+
+# Modelo Whisper.cpp
+models/ggml-small-q8_0.bin
