@@ -6,13 +6,14 @@
   <link rel="stylesheet" href="styles/style.css">
   <title>Voice2TextJS</title>
 </head>
-<body>
+<body class="dark_mode">
   <div class="header">
-    <h1 class="title">Voice2Text</h1>
+    <h1 class="title">Voice2TextJS</h1>
   </div>
 
   <div class="container">
     <div class="input-container">
+      <canvas id="visualizer" class="audio-visualizer"></canvas>
       <button class="micro_btn"></button>
     </div>
   </div>
@@ -23,6 +24,6 @@
     </div>
   </div>
 
-  <script src="renderer.js"></script>
+  <script defer src="renderer.js"></script>
 </body>
 </html>

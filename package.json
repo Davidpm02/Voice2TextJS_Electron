@@ -12,7 +12,6 @@
   },
   "license": "ISC",
   "author": "David Padilla Muñoz",
-  "type": "commonjs",
   "main": "main/main.js",
   "scripts": {
     "start": "electron .",
