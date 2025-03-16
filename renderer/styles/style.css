@@ -15,3 +15,69 @@ body {
     padding: 1rem;
     border-radius: 1rem;
 }
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 500px;
+}
+
+.micro_btn {
+    background-image:url('../../src/icons/micro_off_dark_ico.png');
+    height: 80px;
+    width: 80px;
+    background-size: 80px 80px;
+    background-position:center;
+    border:none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
+    -webkit-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
+    -moz-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
+}
+
+.micro_btn:active {
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.55);
+    -webkit-box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.55);
+    -moz-box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.55);
+    background-color: gray;
+}
+
+.toogle_display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toogle_display_btn {
+    background-image:url('../../src/icons/light_mode_ico.png');
+    height: 50px;
+    width: 50px;
+    background-size: 50px 50px;
+    background-position:center;
+    border:none;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
+    position: fixed;
+    bottom: 20px;
+    right: 10px;
+}
+
+
+/* Estilos para el modo claro */
+.light_mode {
+    background-color: #fff;
+    color: #000;
+}
+
+
+
+/* Estilos para el modo oscuro */
+.dark_mode {
+    background-color: #1e1e1e;
+    color: #fff;
+}
+
+
