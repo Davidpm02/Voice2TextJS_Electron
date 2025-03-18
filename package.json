@@ -19,5 +19,8 @@
   },
   "devDependencies": {
     "electron": "^35.0.2"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3"
   }
 }

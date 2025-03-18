@@ -52,15 +52,30 @@ function getFileName() {
 }
 
 // Función para guardar el archivo de audio
-async function saveAudioFile(audioBlob, fileName) {
+async function saveAndConvertAudio(audioBlob, fileName) {
     try {
-        if (!window.electronAPI) {
-            throw new Error('electronAPI no está disponible');
-        }
-        const buffer = await audioBlob.arrayBuffer();
-        window.electronAPI.saveAudio({ buffer: Array.from(new Uint8Array(buffer)), fileName });
+      if (!window.electronAPI) {
+        throw new Error('electronAPI no está disponible');
+      }
+  
+      // Guardar el archivo original
+      const buffer = await audioBlob.arrayBuffer();
+      const uint8Array = new Uint8Array(buffer);
+      
+      // Llamamos a saveAudio y esperamos la respuesta
+      window.electronAPI.saveAudio({ buffer: Array.from(uint8Array), fileName });
+      
+      // Convertir el audio (solo se ejecutará cuando el archivo esté guardado)
+      console.log(`Iniciando conversión del archivo: ${fileName}`);
+      try {
+        const convertedFilePath = await window.electronAPI.convertAudio(fileName, fileName);
+        console.log('Archivo convertido correctamente:', convertedFilePath);
+      } catch (conversionError) {
+        console.error('Error en la conversión del audio:', conversionError);
+      }
+      
     } catch (error) {
-        console.error('Error al guardar el archivo:', error);
+      console.error('Error al guardar o convertir el archivo:', error);
     }
 }
 
@@ -109,7 +124,7 @@ async function startAudio() {
             const fileName = getFileName();
             
             // Guardar el archivo usando el proceso principal
-            await saveAudioFile(audioBlob, fileName);
+            await saveAndConvertAudio(audioBlob, fileName);
             
             // Limpiar
             audioChunks = [];
