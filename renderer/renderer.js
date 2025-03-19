@@ -29,11 +29,12 @@ if (!window.electronAPI) {
 
 // Configurar el manejador de respuestas del proceso principal
 if (window.electronAPI) {
-    window.electronAPI.onSaveResponse((response) => {
-        if (response.success) {
+    window.electronAPI.onSaveResponse((event, response) => {
+        if (response && response.success) {
             console.log('Archivo guardado exitosamente en:', response.filePath);
         } else {
-            console.error('Error al guardar el archivo:', response.error);
+            const errorMsg = response && response.error ? response.error : 'Error desconocido';
+            console.error('Error al guardar el archivo:', errorMsg);
         }
     });
 }

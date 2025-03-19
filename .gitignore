@@ -144,3 +144,6 @@ models/ggml-small-q8_0.bin
 
 # Ficheros de grabación de audio
 *.wav
+
+# Ficheros de texto
+*.txt

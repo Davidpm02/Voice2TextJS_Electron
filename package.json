@@ -21,6 +21,7 @@
     "electron": "^35.0.2"
   },
   "dependencies": {
-    "chokidar": "^4.0.3"
+    "chokidar": "^4.0.3",
+    "iconv-lite": "^0.6.3"
   }
 }
