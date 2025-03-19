@@ -87,6 +87,10 @@ body {
     right: 10px;
 }
 
+.hidden {
+  display: none;
+}
+
 /* Estilos para el modo claro */
 .light_mode {
     background-color: #fff;
@@ -113,6 +117,33 @@ body {
 
 .dark_mode .title {
     color: #fff;
+}
+
+/* Contenedor de notificaciones */
+#notification-container {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    z-index: 1000;
+    text-align: center;
+}
+
+#notification-container:not(.hidden) {
+    display: block;
+}
+
+/* Ocultar el contenedor cuando no se use */
+.hidden {
+    display: none !important;
 }
 
 

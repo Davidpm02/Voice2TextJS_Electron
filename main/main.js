@@ -32,8 +32,10 @@ ipcMain.handle('convert-audio', async (event, inputPath, outputPath) => {
 });
   
 
+let win;
+
 function createWindow() {
-    const win = new BrowserWindow({
+    win = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences: {
@@ -48,6 +50,9 @@ function createWindow() {
     win.webContents.openDevTools();
     
     win.loadFile('renderer/index.html');
+    win.webContents.on('did-finish-load', () => {
+      console.log('La ventana ha terminado de cargar');
+  });
 }
 
 // Asegurarse de que el directorio output existe
@@ -124,20 +129,22 @@ function watchForNewRecordings() {
 
 
 function handleConversionCompleted(convertedFilePath) {
-    console.log(`Proceso de conversión completado: ${convertedFilePath}`);
-    console.log(`Iniciando transcripción automática...`);
-    
-    // Ejecutar la transcripción
-    transcribeLatestRecording()
-      .then(transcription => {
-        console.log('Transcripción completada y mostrada en consola');
-      })
-      .catch(error => {
-        console.error('Error en la transcripción:', error);
-      });
+  console.log(`Proceso de conversión completado: ${convertedFilePath}`);
+  console.log(`Iniciando transcripción automática...`);
+  
+  // Pasamos la ventana principal a la función
+  transcribeLatestRecording(win)
+    .then(transcription => {
+      console.log('Transcripción completada y mostrada en consola');
+    })
+    .catch(error => {
+      console.error('Error en la transcripción:', error);
+    });
 }
 
 
 app.whenReady().then(() => {
   watchForNewRecordings();
 });
+
+module.exports = { win };

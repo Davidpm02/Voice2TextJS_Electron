@@ -27,6 +27,27 @@ if (!window.electronAPI) {
     console.error('Error: electronAPI no está disponible. Asegúrate de que el preload script se está cargando correctamente.');
 }
 
+// Función unificada para mostrar notificaciones
+function showNotification(message, duration = 2000) {
+  const notificationContainer = document.getElementById('notification-container');
+  if (!notificationContainer) {
+    console.error('No se encontró el contenedor de notificaciones en el DOM.');
+    return;
+  }
+
+  // Actualizar el contenido del mensaje
+  notificationContainer.textContent = message;
+  
+  // Asegurarse de que el container es visible
+  notificationContainer.style.display = 'block';
+  notificationContainer.classList.remove('hidden');
+
+  // Ocultar después del tiempo especificado
+  setTimeout(() => {
+    notificationContainer.classList.add('hidden');
+  }, duration);
+}
+
 // Configurar el manejador de respuestas del proceso principal
 if (window.electronAPI) {
     window.electronAPI.onSaveResponse((event, response) => {
@@ -36,6 +57,11 @@ if (window.electronAPI) {
             const errorMsg = response && response.error ? response.error : 'Error desconocido';
             console.error('Error al guardar el archivo:', errorMsg);
         }
+    });
+
+    // Configurar el manejador de notificaciones
+    window.electronAPI.onNotification((event, message) => {
+        showNotification(message);
     });
 }
 
@@ -274,3 +300,18 @@ microBtn.addEventListener('click', async () => {
         stopAudio();
     }
 });
+
+// Escuchar eventos personalizados de notificación
+window.addEventListener('show-app-notification', (event) => {
+    console.log('Evento show-app-notification recibido en renderer:', event.detail);
+    showNotification(event.detail);
+});
+
+// Botón de prueba para notificaciones
+const testNotificationBtn = document.getElementById('test-notification');
+if (testNotificationBtn) {
+    testNotificationBtn.addEventListener('click', () => {
+        console.log('Botón de prueba de notificación clickeado');
+        showNotification("Esta es una notificación de prueba", 3000);
+    });
+}

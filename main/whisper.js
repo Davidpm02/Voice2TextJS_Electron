@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const { convertToWav } = require('./audioConverter');
+const { clipboard, ipcMain } = require('electron'); 
 
 const audioDir = path.join(__dirname, '../output'); // Directorio donde se guardan las grabaciones
 const whisperPath = path.join(__dirname, '../whisper.cpp/build/bin/Release/whisper-cli.exe'); // Ruta al ejecutable de Whisper
@@ -22,8 +23,7 @@ function getLatestAudioFile(directory) {
     }
 }
 
-async function transcribeLatestRecording() {
-  // Buscar el archivo convertido más reciente
+async function transcribeLatestRecording(mainWindow) {
   const convertedFilePath = getLatestAudioFile(audioDir);
   if (!convertedFilePath) {
     console.error('No se encontró ningún archivo de audio convertido reciente.');
@@ -39,24 +39,42 @@ async function transcribeLatestRecording() {
 
     return new Promise((resolve, reject) => {
       console.log(`Ejecutando Whisper.cpp con el archivo: ${convertedFilePath}`);
-      exec(`"${whisperPath}" -m "${modelPath}" -f "${convertedFilePath}" -l es`, (error, stdout, stderr) => {
+      exec(`"${whisperPath}" -m "${modelPath}" -f "${convertedFilePath}" -l es `, (error, stdout, stderr) => {
         if (error) {
           console.error(`Error ejecutando Whisper.cpp: ${error.message}`);
           reject(error);
           return;
         }
-        
+
         if (stderr) {
           console.error(`stderr: ${stderr}`);
         }
-        
-        console.log(`\n=============================================`);
-        console.log(`TRANSCRIPCIÓN COMPLETADA:`);
-        console.log(`=============================================`);
-        console.log(stdout);
-        console.log(`=============================================\n`);
-        
-        resolve(stdout);
+
+        // Procesar la transcripción
+        const processedTranscription = stdout
+          .split('\n')
+          .map(line => line.replace(/\[.*?\]/g, '').trim())
+          .filter(line => line.length > 0)
+          .join(' ');
+
+        // Copiar al portapapeles
+        clipboard.writeText(processedTranscription);
+        console.log('La transcripción procesada se ha copiado al portapapeles.');
+
+        // Enviar notificación si tenemos la ventana
+        if (mainWindow) {
+          console.log('La ventana principal existe');
+          console.log('Estado de la ventana:', mainWindow.isDestroyed());
+          console.log('¿La ventana está enfocada?', mainWindow.isFocused());
+          console.log('¿La ventana está visible?', mainWindow.isVisible());
+          
+          mainWindow.webContents.send('show-notification', 'Se ha copiado la transcripción al portapapeles');
+          console.log('Mensaje enviado a través de webContents.send');
+        } else {
+          console.error('La ventana principal es null o undefined');
+        }
+
+        resolve(processedTranscription);
       });
     });
   } catch (error) {

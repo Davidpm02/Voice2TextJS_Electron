@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
             console.error('Error al convertir audio:', error);
             throw error;
         }
-    }
-}); 
+    },
+    onNotification: (callback) => ipcRenderer.on('show-notification', (event, ...args) => callback(event, ...args))
+});
