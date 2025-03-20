@@ -18,6 +18,9 @@ body {
     padding: 1rem;
     border-radius: 1rem;
     transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+    box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
+    -webkit-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
+    -moz-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
 }
 
 .container {
@@ -74,18 +77,20 @@ body {
 }
 
 .toogle_display_btn {
-    background-image:url('../../src/icons/light_mode_ico.png');
-    height: 50px;
+    background-image: url('../../src/icons/light_mode_ico.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
     width: 50px;
-    background-size: 50px 50px;
-    background-position:center;
-    border:none;
+    height: 50px;
+    border: none;
     border-radius: 15px;
     cursor: pointer;
-    box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
+    box-shadow: 3px 3px 5px 0px rgba(0, 0, 0, 0.55);
     position: fixed;
     bottom: 20px;
     right: 10px;
+    transition: background-image 0.3s ease-in-out; /* Transición suave */
 }
 
 .hidden {

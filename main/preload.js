@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const path = require('path');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     saveAudio: (data) => ipcRenderer.send('save-audio', data),
@@ -13,4 +14,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     onNotification: (callback) => ipcRenderer.on('show-notification', (event, ...args) => callback(event, ...args)),
     sendNotification: (message) => ipcRenderer.send('send-notification', message),
+    pathJoin: (...args) => path.join(__dirname, ...args)
 });
