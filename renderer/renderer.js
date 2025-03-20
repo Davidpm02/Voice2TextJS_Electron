@@ -3,6 +3,8 @@ const toogleDisplayBtn = document.querySelector('.toogle_display_btn');
 const microBtn = document.querySelector('.micro_btn');
 const canvas = document.getElementById('visualizer');
 const canvasCtx = canvas.getContext('2d');
+const successSound = document.getElementById('success-sound');
+const errorSound = document.getElementById('error-sound');
 
 // Estado del modo
 let isDarkMode = true;
@@ -61,6 +63,25 @@ if (window.electronAPI) {
 
     // Configurar el manejador de notificaciones
     window.electronAPI.onNotification((event, message) => {
+        
+        if (message === 'Se ha copiado la transcripción al portapapeles') {
+            if (successSound) {
+                successSound.currentTime = 0;
+                successSound.volume = 0.5;
+                successSound.play().catch((error) => {
+                    console.error('Error al reproducir el sonido de alerta:', error);
+                });
+            }
+        } else {
+            if (errorSound) {
+                errorSound.currentTime = 0;
+                errorSound.volume = 0.7;
+                errorSound.play().catch((error) => {
+                    console.error('Error al reproducir el sonido de error:', error);
+                });
+            }
+        }
+
         showNotification(message);
     });
 }
@@ -312,12 +333,3 @@ window.addEventListener('show-app-notification', (event) => {
     console.log('Evento show-app-notification recibido en renderer:', event.detail);
     showNotification(event.detail);
 });
-
-// Botón de prueba para notificaciones
-const testNotificationBtn = document.getElementById('test-notification');
-if (testNotificationBtn) {
-    testNotificationBtn.addEventListener('click', () => {
-        console.log('Botón de prueba de notificación clickeado');
-        showNotification("Esta es una notificación de prueba", 3000);
-    });
-}
