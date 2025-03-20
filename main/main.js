@@ -8,6 +8,34 @@ const { convertToWav } = require('./audioConverter');
 const outputDir = path.join(__dirname, '..', 'output');
 
 
+let win;
+
+function createWindow() {
+    win = new BrowserWindow({
+        width: 450,
+        height: 710,
+        maxWidth: 450,
+        maxHeight: 710,
+        minWidth: 450,
+        minHeight: 710,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.resolve(__dirname, 'preload.js'),
+            sandbox: false
+        }
+    });
+    
+    win.loadFile('renderer/index.html');
+    win.webContents.on('did-finish-load', () => {
+      console.log('La ventana ha terminado de cargar');
+  });
+}
+
+
+
+
+
 // Manejador de eventos para convert-audio
 ipcMain.handle('convert-audio', async (event, inputPath, outputPath) => {
   try {
@@ -27,35 +55,13 @@ ipcMain.handle('convert-audio', async (event, inputPath, outputPath) => {
     return convertedFile;
   } catch (error) {
     console.error('Error en la conversión:', error);
+    if (win) {
+        win.webContents.send('show-notification', 'No se ha podido convertir el archivo de audio');
+    }
     throw error;
   }
 });
-  
 
-let win;
-
-function createWindow() {
-    win = new BrowserWindow({
-        width: 450,
-        height: 710,
-        maxWidth: 450,
-        maxHeight: 710,
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            preload: path.resolve(__dirname, 'preload.js'),
-            sandbox: false
-        }
-    });
-
-    // Para depuración
-    win.webContents.openDevTools();
-    
-    win.loadFile('renderer/index.html');
-    win.webContents.on('did-finish-load', () => {
-      console.log('La ventana ha terminado de cargar');
-  });
-}
 
 // Asegurarse de que el directorio output existe
 function ensureOutputDirectory() {
@@ -147,6 +153,9 @@ function handleConversionCompleted(convertedFilePath) {
     })
     .catch(error => {
       console.error('Error en la transcripción:', error);
+      if (win) {
+          win.webContents.send('show-notification', 'No se ha podido transcribir el archivo de audio');
+      }
     });
 }
 

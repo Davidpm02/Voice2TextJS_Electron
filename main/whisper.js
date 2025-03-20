@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const { convertToWav } = require('./audioConverter');
-const { clipboard, ipcMain } = require('electron'); 
+const { clipboard } = require('electron'); 
 
 const audioDir = path.join(__dirname, '../output'); // Directorio donde se guardan las grabaciones
 const whisperPath = path.join(__dirname, '../whisper.cpp/build/bin/Release/whisper-cli.exe'); // Ruta al ejecutable de Whisper
@@ -42,6 +42,10 @@ async function transcribeLatestRecording(mainWindow) {
       exec(`"${whisperPath}" -m "${modelPath}" -f "${convertedFilePath}" -l es `, (error, stdout, stderr) => {
         if (error) {
           console.error(`Error ejecutando Whisper.cpp: ${error.message}`);
+
+          // Notificamos el usuario a través de la ventana principal       
+          mainWindow.webContents.send('show-notification', 'No se ha encontrado ningún modelo de Whisper.cpp');
+    
           reject(error);
           return;
         }
@@ -61,14 +65,9 @@ async function transcribeLatestRecording(mainWindow) {
         clipboard.writeText(processedTranscription);
         console.log('La transcripción procesada se ha copiado al portapapeles.');
 
-        // Enviar notificación si tenemos la ventana
-        if (mainWindow) {          
-          mainWindow.webContents.send('show-notification', 'Se ha copiado la transcripción al portapapeles');
-          console.log('Mensaje enviado a través de webContents.send');
-        } else {
-          console.error('La ventana principal es null o undefined');
-        }
-
+        // Notificamos el usuario a través de la ventana principal       
+        mainWindow.webContents.send('show-notification', 'Se ha copiado la transcripción al portapapeles');
+    
         resolve(processedTranscription);
       });
     });
