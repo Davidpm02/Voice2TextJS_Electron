@@ -36,8 +36,10 @@ let win;
 
 function createWindow() {
     win = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 450,
+        height: 710,
+        maxWidth: 450,
+        maxHeight: 710,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -101,6 +103,12 @@ ipcMain.on('save-audio', (event, { buffer, fileName }) => {
           event.reply('save-audio-response', { success: true, filePath });
       }
   });
+});
+
+ipcMain.on('send-notification', (event, message) => {
+  if (win) {
+      win.webContents.send('show-notification', message);
+  }
 });
 
 

@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
             throw error;
         }
     },
-    onNotification: (callback) => ipcRenderer.on('show-notification', (event, ...args) => callback(event, ...args))
+    onNotification: (callback) => ipcRenderer.on('show-notification', (event, ...args) => callback(event, ...args)),
+    sendNotification: (message) => ipcRenderer.send('send-notification', message),
 });

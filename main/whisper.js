@@ -62,12 +62,7 @@ async function transcribeLatestRecording(mainWindow) {
         console.log('La transcripción procesada se ha copiado al portapapeles.');
 
         // Enviar notificación si tenemos la ventana
-        if (mainWindow) {
-          console.log('La ventana principal existe');
-          console.log('Estado de la ventana:', mainWindow.isDestroyed());
-          console.log('¿La ventana está enfocada?', mainWindow.isFocused());
-          console.log('¿La ventana está visible?', mainWindow.isVisible());
-          
+        if (mainWindow) {          
           mainWindow.webContents.send('show-notification', 'Se ha copiado la transcripción al portapapeles');
           console.log('Mensaje enviado a través de webContents.send');
         } else {

@@ -180,6 +180,12 @@ async function startAudio() {
         console.log('Audio iniciado correctamente');
     } catch (error) {
         console.error('Error al acceder al micrófono:', error);
+
+        // Enviar notificación al proceso principal
+        if (window.electronAPI) {
+            window.electronAPI.sendNotification('No se ha detectado ningún micrófono.');
+        }
+
         isMicroOff = true;
         microBtn.style.backgroundImage = isDarkMode ? 
             'url(../../src/icons/micro_off_dark_ico.png)' : 

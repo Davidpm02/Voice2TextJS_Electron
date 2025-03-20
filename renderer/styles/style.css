@@ -57,6 +57,7 @@ body {
     -webkit-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
     -moz-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
     transition: all 0.3s ease-in-out;
+    position: fixed;
 }
 
 .micro_btn:active {
@@ -123,7 +124,7 @@ body {
 #notification-container {
     display: none;
     position: fixed;
-    top: 50%;
+    top: 35%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: #333;
