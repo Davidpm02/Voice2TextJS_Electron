@@ -77,7 +77,6 @@ body {
 }
 
 .toogle_display_btn {
-    background-image: url('../../src/icons/light_mode_ico.png');
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -90,7 +89,7 @@ body {
     position: fixed;
     bottom: 20px;
     right: 10px;
-    transition: background-image 0.3s ease-in-out; /* Transición suave */
+    transition: background-image 0.3s ease-in-out;
 }
 
 .hidden {

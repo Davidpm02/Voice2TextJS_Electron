@@ -6,15 +6,13 @@ const canvasCtx = canvas.getContext('2d');
 const successSound = document.getElementById('success-sound');
 const errorSound = document.getElementById('error-sound');
 
-
-const lightModeIcon = window.electronAPI.pathJoin('../src/icons/light_mode_ico.png');
-const darkModeIcon = window.electronAPI.pathJoin('../src/icons/dark_mode_ico.png');
-const microOffDarkIcon = window.electronAPI.pathJoin('../src/icons/micro_off_dark_ico.png');
-const microOffLightIcon = window.electronAPI.pathJoin('../src/icons/micro_off_light_ico.png');
-const microOnDarkIcon = window.electronAPI.pathJoin('../src/icons/micro_on_dark_ico.png');
-const microOnLightIcon = window.electronAPI.pathJoin('../src/icons/micro_on_light_ico.png');
-
-
+// Definir las rutas de los iconos
+const lightModeIcon = window.electronAPI.pathJoin('src/icons/light_mode_ico.png');
+const darkModeIcon = window.electronAPI.pathJoin('src/icons/dark_mode_ico.png');
+const microOffDarkIcon = window.electronAPI.pathJoin('src/icons/micro_off_dark_ico.png');
+const microOffLightIcon = window.electronAPI.pathJoin('src/icons/micro_off_light_ico.png');
+const microOnDarkIcon = window.electronAPI.pathJoin('src/icons/micro_on_dark_ico.png');
+const microOnLightIcon = window.electronAPI.pathJoin('src/icons/micro_on_light_ico.png');
 
 // Estado del modo
 let isDarkMode = true;
@@ -304,6 +302,23 @@ setupCanvas();
 // Manejar redimensionamiento de ventana
 window.addEventListener('resize', setupCanvas);
 
+// Función para actualizar los iconos
+function updateIcons() {
+    console.log('Actualizando iconos. Modo oscuro:', isDarkMode);
+    
+    // Actualizar icono del botón de modo
+    const modeIcon = isDarkMode ? lightModeIcon : darkModeIcon;
+    console.log('Nuevo icono de modo:', modeIcon);
+    toogleDisplayBtn.style.backgroundImage = `url("${modeIcon}")`;
+    
+    // Actualizar icono del micrófono
+    const microIcon = isMicroOff ? 
+        (isDarkMode ? microOffDarkIcon : microOffLightIcon) :
+        (isDarkMode ? microOnDarkIcon : microOnLightIcon);
+    console.log('Nuevo icono de micrófono:', microIcon);
+    microBtn.style.backgroundImage = `url("${microIcon}")`;
+}
+
 // Evento para el botón de cambio de modo
 toogleDisplayBtn.addEventListener('click', () => {
     isDarkMode = !isDarkMode;
@@ -311,17 +326,13 @@ toogleDisplayBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark_mode', isDarkMode);
     document.body.classList.toggle('light_mode', !isDarkMode);
     
-    // Actualizar la imagen del botón de cambio de modo
-    const newIcon = isDarkMode ? lightModeIcon : darkModeIcon;
-    console.log('Nueva ruta del ícono:', newIcon);
-    toogleDisplayBtn.style.backgroundImage = `url(${newIcon})`;
-    toogleDisplayBtn.style.backgroundSize = 'cover';
-    
-    if (isMicroOff) {
-        microBtn.style.backgroundImage = isDarkMode ? `url(${microOffDarkIcon})` : `url(${microOffLightIcon})`;
-    } else {
-        microBtn.style.backgroundImage = isDarkMode ? `url(${microOnDarkIcon})` : `url(${microOnLightIcon})`;
-    }
+    // Actualizar los iconos
+    updateIcons();
+});
+
+// Actualizar los iconos al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    updateIcons();
 });
 
 // Evento para el botón de micrófono
