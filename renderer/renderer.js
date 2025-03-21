@@ -508,7 +508,8 @@ function drawWaves() {
             const y = height / 2 + 
                      Math.sin(x * wave.frequency + wave.phase) * 
                      wave.amplitude * 
-                     Math.sin(Date.now() * 0.001);
+                     // Reducimos la velocidad ajustando el multiplicador de Date.now()
+                     Math.sin(Date.now() * 0.0005); // Cambio de 0.001 a 0.0005
 
             if (x === 0) {
                 ctx.moveTo(x, y);
@@ -519,8 +520,8 @@ function drawWaves() {
 
         ctx.stroke();
         
-        // Actualizar la fase para la animación
-        wave.phase += 0.05;
+        // Reducir la velocidad de cambio de fase
+        wave.phase += 0.02; // Cambio de 0.05 a 0.02
     });
 
     waveAnimationId = requestAnimationFrame(drawWaves);
