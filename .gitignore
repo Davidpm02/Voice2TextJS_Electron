@@ -135,6 +135,63 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Dependencias
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Archivos de construcción
+/dist
+/out
+
+# Archivos de entorno y configuración local
+.env
+.env.local
+.env.*.local
+dev-app-update.yml
+*.local
+
+# Archivos de configuración del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Electron
+*.asar
+
+# Archivos temporales
+/temp
+*.tmp
+*.temp
+
+# Archivos de log
+*.log
+logs/
+
+# Archivos de respaldo
+*.bak
+*.backup
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archivos específicos de Whisper
+/models/*.bin
+/whisper.cpp/build/
+
+# Archivos de credenciales o tokens (excepto workflows)
+!.github/workflows/
+*.pem
+*.key
+*.cert
+*.token
+
+# Archivos de configuración personal
+config.personal.json
+secrets.json
 
 # Build del modelo Whisper.cpp compilado
 whisper.cpp/

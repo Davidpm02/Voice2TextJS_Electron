@@ -4,8 +4,9 @@ const { transcribeLatestRecording } = require('./whisper');
 const path = require('path');
 const fs = require('fs');
 const { convertToWav } = require('./audioConverter');
+const { autoUpdater } = require('electron-updater');
 
-const outputDir = path.join(__dirname, '..', 'output');
+const outputDir = path.join(app.getPath('userData'), 'output');
 
 
 let win;
@@ -26,13 +27,43 @@ function createWindow() {
         }
     });
 
-    // Abro las devtools
-    win.webContents.openDevTools();
-    
     win.loadFile('renderer/index.html');
     win.webContents.on('did-finish-load', () => {
       console.log('La ventana ha terminado de cargar');
   });
+
+    // Configurar el auto-actualizador
+    if (app.isPackaged) {
+        autoUpdater.checkForUpdatesAndNotify();
+
+        // Eventos del auto-actualizador
+        autoUpdater.on('checking-for-update', () => {
+            console.log('Buscando actualizaciones...');
+        });
+
+        autoUpdater.on('update-available', (info) => {
+            win.webContents.send('show-notification', 'Hay una actualización disponible. Descargando...');
+            console.log('Actualización disponible:', info);
+        });
+
+        autoUpdater.on('update-not-available', () => {
+            console.log('No hay actualizaciones disponibles.');
+        });
+
+        autoUpdater.on('download-progress', (progressObj) => {
+            let message = `Velocidad: ${progressObj.bytesPerSecond} - Descargado ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
+            console.log(message);
+        });
+
+        autoUpdater.on('update-downloaded', () => {
+            win.webContents.send('show-notification', 'Actualización descargada. Se instalará al reiniciar.');
+            console.log('Actualización descargada');
+        });
+
+        autoUpdater.on('error', (err) => {
+            console.error('Error en actualización:', err);
+        });
+    }
 }
 
 
@@ -42,14 +73,18 @@ function createWindow() {
 // Manejador de eventos para convert-audio
 ipcMain.handle('convert-audio', async (event, inputPath, outputPath) => {
   try {
+    const baseFileName = path.basename(inputPath);
+    const newInputPath = path.join(outputDir, baseFileName);
+    const newOutputPath = path.join(outputDir, path.basename(outputPath));
+
     console.log(`Solicitud de conversión recibida:
-    - Input: ${inputPath}
-    - Output: ${outputPath}`);
+    - Input: ${newInputPath}
+    - Output: ${newOutputPath}`);
     
     // Asegurarse de que el directorio de salida existe
     ensureOutputDirectory();
     
-    const convertedFile = await convertToWav(inputPath, outputPath);
+    const convertedFile = await convertToWav(newInputPath, newOutputPath);
     console.log(`Archivo convertido exitosamente: ${convertedFile}`);
     
     // Iniciar el proceso de transcripción automáticamente
@@ -71,6 +106,7 @@ function ensureOutputDirectory() {
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
     }
+    console.log('Directorio de salida:', outputDir);
     return outputDir;
 }
 
@@ -105,7 +141,7 @@ ipcMain.on('save-audio', (event, { buffer, fileName }) => {
           console.error('Error al guardar el archivo:', err);
           event.reply('save-audio-response', { 
               success: false, 
-              error: err ? err.message : 'Error desconocido al guardar el archivo'
+              error: err.message || 'Error desconocido al guardar el archivo'
           });
       } else {
           console.log('Archivo guardado exitosamente:', filePath);
@@ -123,43 +159,56 @@ ipcMain.on('send-notification', (event, message) => {
 
 // Reviso la generación de un nuevo fichero .wav en el directorio 'output/'.
 function watchForNewRecordings() {
-  console.log(`Watching for new recordings in: ${outputDir}`);
-  const watcher = chokidar.watch(outputDir, {
-    persistent: true,
-    ignoreInitial: true,
-    depth: 0,
-    awaitWriteFinish: {
-      stabilityThreshold: 500,
-      pollInterval: 100,
-    },
-  });
+    const dirToWatch = outputDir;
+    console.log(`Watching for new recordings in: ${dirToWatch}`);
+    
+    const watcher = chokidar.watch(dirToWatch, {
+        persistent: true,
+        ignoreInitial: true,
+        depth: 0,
+        awaitWriteFinish: {
+            stabilityThreshold: 500,
+            pollInterval: 100,
+        },
+    });
 
-  watcher.on("add", (filePath) => {
-    if (filePath.endsWith("_converted.wav")) {
-      console.log(`Nuevo archivo convertido detectado: ${filePath}`);
-      // No iniciamos transcripción aquí, ya que se maneja en handleConversionCompleted
-    }
-  });
+    watcher.on("add", (filePath) => {
+        if (filePath.endsWith("_converted.wav")) {
+            console.log(`Nuevo archivo convertido detectado: ${filePath}`);
+            // No iniciamos transcripción aquí, ya que se maneja en handleConversionCompleted
+        }
+    });
 
-  watcher.on("error", (error) => console.error(`Error en el watcher: ${error}`));
+    watcher.on("error", (error) => console.error(`Error en el watcher: ${error}`));
 }
 
 
 function handleConversionCompleted(convertedFilePath) {
-  console.log(`Proceso de conversión completado: ${convertedFilePath}`);
-  console.log(`Iniciando transcripción automática...`);
-  
-  // Pasamos la ventana principal a la función
-  transcribeLatestRecording(win)
-    .then(transcription => {
-      console.log('Transcripción completada y mostrada en consola');
-    })
-    .catch(error => {
-      console.error('Error en la transcripción:', error);
-      if (win) {
-          win.webContents.send('show-notification', 'No se ha podido transcribir el archivo de audio');
-      }
-    });
+    console.log(`Proceso de conversión completado: ${convertedFilePath}`);
+    console.log(`Iniciando transcripción automática...`);
+    
+    // Asegurarnos de que el archivo existe
+    if (!fs.existsSync(convertedFilePath)) {
+        console.error('Error: El archivo convertido no existe:', convertedFilePath);
+        if (win) {
+            win.webContents.send('show-notification', 'Error: Archivo de audio no encontrado');
+        }
+        return;
+    }
+    
+    // Pasamos la ruta completa del archivo convertido
+    transcribeLatestRecording(win, convertedFilePath)
+        .then(transcription => {
+            console.log('Transcripción completada:', transcription);
+            // No es necesario enviar notificación aquí, se maneja en whisper.js
+        })
+        .catch(error => {
+            console.error('Error detallado en la transcripción:', error);
+            if (win) {
+                win.webContents.send('show-notification', 
+                    `Error en la transcripción: ${error.message || 'Error desconocido'}`);
+            }
+        });
 }
 
 

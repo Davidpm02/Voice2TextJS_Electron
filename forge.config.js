@@ -4,6 +4,14 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    extraResource: [
+      './whisper.cpp/build/bin/Release/whisper-cli.exe',
+      './whisper.cpp/build/bin/Release/whisper.dll',
+      './whisper.cpp/build/bin/Release/ggml-base.dll',
+      './whisper.cpp/build/bin/Release/ggml-cpu.dll',
+      './whisper.cpp/build/bin/Release/ggml.dll',
+      './models/ggml-small-q8_0.bin'
+    ]
   },
   rebuildConfig: {},
   makers: [
@@ -41,4 +49,16 @@ module.exports = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'Davidpm02',
+          name: 'Voice2TextJS_Electron'
+        },
+        prerelease: false
+      }
+    }
+  ]
 };
