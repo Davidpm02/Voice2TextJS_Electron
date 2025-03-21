@@ -21,7 +21,7 @@ let isDarkMode = true;
 let isMicroOff = true;
 
 // Variables para el audio
-let audioContext;
+let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let analyser;
 let microphone;
 let animationId;
@@ -50,23 +50,38 @@ if (!window.electronAPI) {
 
 // Función unificada para mostrar notificaciones
 function showNotification(message, duration = 2000) {
-  const notificationContainer = document.getElementById('notification-container');
-  if (!notificationContainer) {
-    console.error('No se encontró el contenedor de notificaciones en el DOM.');
-    return;
-  }
+    const notificationContainer = document.getElementById('notification-container');
+    if (!notificationContainer) {
+        console.error('No se encontró el contenedor de notificaciones en el DOM.');
+        return;
+    }
 
-  // Actualizar el contenido del mensaje
-  notificationContainer.textContent = message;
-  
-  // Asegurarse de que el container es visible
-  notificationContainer.style.display = 'block';
-  notificationContainer.classList.remove('hidden');
+    // Reproducir el sonido inmediatamente según el tipo de mensaje
+    if (message === 'Se ha copiado la transcripción al portapapeles') {
+        if (successSound) {
+            successSound.currentTime = 0;
+            successSound.volume = 0.5;
+            successSound.play().catch(console.error);
+        }
+    } else {
+        if (errorSound) {
+            errorSound.currentTime = 0;
+            errorSound.volume = 0.7;
+            errorSound.play().catch(console.error);
+        }
+    }
 
-  // Ocultar después del tiempo especificado
-  setTimeout(() => {
-    notificationContainer.classList.add('hidden');
-  }, duration);
+    // Actualizar el contenido del mensaje
+    notificationContainer.textContent = message;
+    
+    // Mostrar la notificación
+    notificationContainer.style.display = 'block';
+    notificationContainer.classList.remove('hidden');
+
+    // Ocultar después del tiempo especificado
+    setTimeout(() => {
+        notificationContainer.classList.add('hidden');
+    }, duration);
 }
 
 // Configurar el manejador de respuestas del proceso principal
@@ -92,27 +107,9 @@ if (window.electronAPI) {
                     waveAnimationId: window.transcriptionWaveAnimationId
                 });
             }
-
-            // Reproducir sonido de éxito
-            if (successSound) {
-                successSound.currentTime = 0;
-                successSound.volume = 0.5;
-                successSound.play().catch((error) => {
-                    console.error('Error al reproducir el sonido de alerta:', error);
-                });
-            }
-        } else {
-            // Para otros tipos de notificaciones
-            if (errorSound) {
-                errorSound.currentTime = 0;
-                errorSound.volume = 0.7;
-                errorSound.play().catch((error) => {
-                    console.error('Error al reproducir el sonido de error:', error);
-                });
-            }
         }
 
-        // Mostrar la notificación después de ocultar el estado de transcripción
+        // Mostrar la notificación (el sonido se reproducirá dentro de showNotification)
         showNotification(message);
     });
 }
@@ -171,10 +168,14 @@ function setupCanvas() {
     canvasCtx.translate(0.5, 0.5);
 }
 
-// Función para iniciar la captura de audio
+// Función optimizada para iniciar el audio
 async function startAudio() {
     try {
-        if (!audioContext) {
+        // Asegurarnos de que todo esté limpio antes de empezar
+        stopAudio();
+
+        // Crear nuevo contexto de audio si no existe o está cerrado
+        if (!audioContext || audioContext.state === 'closed') {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
@@ -182,20 +183,26 @@ async function startAudio() {
             await audioContext.resume();
         }
 
-        // Obtener nuevo stream
+        // Solicitar el stream con opciones optimizadas
         const stream = await navigator.mediaDevices.getUserMedia({ 
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
-                autoGainControl: true
+                autoGainControl: true,
+                latency: 0, // Solicitar mínima latencia
+                sampleRate: 44100, // Tasa de muestreo estándar
+                channelCount: 1 // Mono para reducir el procesamiento
             } 
         });
 
         // Guardar referencia al stream actual
         currentStream = stream;
 
-        // Configurar nuevo MediaRecorder
-        mediaRecorder = new MediaRecorder(stream);
+        // Configurar MediaRecorder con codificación optimizada
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus',
+            audioBitsPerSecond: 128000 // 128kbps es un buen balance
+        });
         audioChunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
@@ -231,24 +238,27 @@ async function startAudio() {
         // Configurar nuevo analyser
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
         bufferLength = analyser.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
 
-        // Crear y conectar nueva fuente de micrófono
+        // Crear y conectar el micrófono
         microphone = audioContext.createMediaStreamSource(stream);
         microphone.connect(analyser);
-        
-        // Mostrar el canvas del visualizador
+
+        // Mostrar el visualizador (eliminamos la duplicación)
         const visualizer = document.getElementById('visualizer');
         visualizer.classList.remove('hidden');
         
-        // Iniciar la animación
-        drawVisualizer();
+        // Iniciar la visualización
+        requestAnimationFrame(drawVisualizer);
         
-        console.log('Audio iniciado correctamente');
-
-        isMicroOff = false;
-        updateIcons();
+        // Usar requestAnimationFrame para la siguiente actualización
+        requestAnimationFrame(() => {
+            drawVisualizer();
+            isMicroOff = false;
+            updateIcons();
+        });
 
         return true;
 
@@ -287,11 +297,13 @@ function stopAudio() {
         currentStream = null;
     }
 
-    // Limpiar el visualizador
+    // Limpiar el visualizador de manera más efectiva
     const visualizer = document.getElementById('visualizer');
-    const ctx = visualizer.getContext('2d');
-    ctx.clearRect(0, 0, visualizer.width, visualizer.height);
-    visualizer.classList.add('hidden');
+    if (visualizer) {
+        const ctx = visualizer.getContext('2d');
+        ctx.clearRect(0, 0, visualizer.width, visualizer.height);
+        visualizer.classList.add('hidden');
+    }
 
     // Detener la animación
     if (animationId) {
@@ -299,21 +311,31 @@ function stopAudio() {
         animationId = null;
     }
 
-    // Limpiar el analizador
-    analyser = null;
+    // Limpiar el analizador y el buffer
+    if (analyser) {
+        analyser.disconnect();
+        analyser = null;
+    }
+    dataArray = null;
+    bufferLength = null;
     
     // Suspender el contexto de audio
-    if (audioContext) {
+    if (audioContext && audioContext.state === 'running') {
         audioContext.suspend();
     }
 }
 
 // Función para dibujar el visualizador
 function drawVisualizer() {
-    if (!analyser) return;
+    // Verificar que tenemos todo lo necesario
+    if (!analyser || !dataArray || !canvas || !canvasCtx) {
+        console.log('Falta algún componente necesario para el visualizador');
+        return;
+    }
 
     animationId = requestAnimationFrame(drawVisualizer);
     
+    // Volver a usar Uint8Array para mejor visualización
     analyser.getByteFrequencyData(dataArray);
     
     const width = canvas.width / window.devicePixelRatio;
@@ -322,10 +344,8 @@ function drawVisualizer() {
     canvasCtx.clearRect(0, 0, width, height);
     
     const barWidth = (width / bufferLength) * 2.5;
-    let barHeight;
-    let x = 0;
-    
     const gradient = canvasCtx.createLinearGradient(0, 0, width, 0);
+    
     if (isDarkMode) {
         gradient.addColorStop(0, '#F49D96');
         gradient.addColorStop(1, '#F34235');
@@ -334,31 +354,27 @@ function drawVisualizer() {
         gradient.addColorStop(1, '#F49D96');
     }
     
+    canvasCtx.fillStyle = gradient;
+    canvasCtx.beginPath();
+
+    // Dibujar barras con efecto suavizado
     for (let i = 0; i < bufferLength; i++) {
-        barHeight = dataArray[i] * 0.5;
+        const x = i * (barWidth + 1);
+        // Ajustar la escala para una mejor visualización
+        const barHeight = (dataArray[i] / 255) * (height / 1.5);
         
-        canvasCtx.fillStyle = gradient;
-        canvasCtx.beginPath();
-        
-        // Dibuja una forma redondeada en lugar de un rectángulo
         const centerY = height / 2;
-        const h = Math.max(1, barHeight);
         
-        canvasCtx.moveTo(x, centerY - h);
-        canvasCtx.quadraticCurveTo(
-            x + barWidth / 2, centerY - h,
-            x + barWidth, centerY - h
-        );
-        canvasCtx.lineTo(x + barWidth, centerY + h);
-        canvasCtx.quadraticCurveTo(
-            x + barWidth / 2, centerY + h,
-            x, centerY + h
-        );
-        canvasCtx.closePath();
-        canvasCtx.fill();
-        
-        x += barWidth + 1;
+        // Dibujar barra superior
+        canvasCtx.fillRect(x, centerY - barHeight, barWidth, barHeight);
+        // Dibujar barra inferior (espejo)
+        canvasCtx.fillRect(x, centerY, barWidth, barHeight);
     }
+
+    // Añadir efecto de brillo
+    canvasCtx.globalCompositeOperation = 'lighter';
+    canvasCtx.fill();
+    canvasCtx.globalCompositeOperation = 'source-over';
 }
 
 // Configuración inicial
@@ -402,22 +418,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Evento para el botón de micrófono
 microBtn.addEventListener('click', async () => {
-    try {
-        if (isMicroOff) {
-            // Intentar iniciar el audio pero no cambiar el estado aquí
-            const success = await startAudio();
-            // El estado se actualiza dentro de startAudio() solo si tiene éxito
-        } else {
-            stopAudio();
-            isMicroOff = true;
-            updateIcons();
-        }
-    } catch (error) {
-        console.error('Error al manejar el evento del micrófono:', error);
+    if (isMicroOff) {
+        microBtn.disabled = true; // Prevenir múltiples clicks
+        const success = await startAudio();
+        microBtn.disabled = false;
+    } else {
+        stopAudio();
         isMicroOff = true;
         updateIcons();
     }
-});
+}, { passive: true }); // Optimizar manejo de eventos
 
 // Escuchar eventos personalizados de notificación
 window.addEventListener('show-app-notification', (event) => {
@@ -495,7 +505,7 @@ function drawWaves() {
 
         // Dibujar la onda
         for (let x = 0; x < width; x++) {
-            const y = height/2 + 
+            const y = height / 2 + 
                      Math.sin(x * wave.frequency + wave.phase) * 
                      wave.amplitude * 
                      Math.sin(Date.now() * 0.001);
