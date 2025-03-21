@@ -180,6 +180,7 @@ async function startAudio() {
             await audioContext.resume();
         }
 
+        // Intentar obtener acceso al micrófono antes de cambiar cualquier estado
         const stream = await navigator.mediaDevices.getUserMedia({ 
             audio: {
                 echoCancellation: true,
@@ -188,7 +189,7 @@ async function startAudio() {
             } 
         });
 
-        // Configurar el MediaRecorder para la grabación
+        // Solo si llegamos aquí (no hay error), configuramos el audio
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
 
@@ -219,9 +220,6 @@ async function startAudio() {
             }
         };
 
-        // Iniciar la grabación
-        mediaRecorder.start();
-
         if (!analyser) {
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 256;
@@ -244,6 +242,13 @@ async function startAudio() {
         drawVisualizer();
         
         console.log('Audio iniciado correctamente');
+
+        // Solo aquí, después de que todo sea exitoso, cambiamos el estado del micrófono
+        isMicroOff = false;
+        updateIcons(); // Actualizamos los iconos aquí
+
+        return true; // Indicamos éxito
+
     } catch (error) {
         console.error('Error al acceder al micrófono:', error);
 
@@ -252,9 +257,11 @@ async function startAudio() {
             window.electronAPI.sendNotification('No se ha detectado ningún micrófono.');
         }
 
+        // Asegurarnos de que el micrófono esté apagado
         isMicroOff = true;
-        microBtn.style.backgroundImage = isDarkMode ? 
-            `url(${microOffDarkIcon})` : `url(${microOffLightIcon})`;
+        updateIcons(); // Actualizamos los iconos para reflejar el estado de error
+
+        return false; // Indicamos fallo
     }
 }
 
@@ -382,21 +389,16 @@ document.addEventListener('DOMContentLoaded', () => {
 microBtn.addEventListener('click', async () => {
     try {
         if (isMicroOff) {
-            // Intentar iniciar el audio antes de cambiar el estado
-            await startAudio();
-            // Si startAudio fue exitoso, actualizamos el estado y los iconos
-            isMicroOff = false;
+            // Intentar iniciar el audio pero no cambiar el estado aquí
+            const success = await startAudio();
+            // El estado se actualiza dentro de startAudio() solo si tiene éxito
         } else {
             stopAudio();
             isMicroOff = true;
+            updateIcons();
         }
-
-        // Actualizar los iconos usando la función centralizada
-        updateIcons();
-        
     } catch (error) {
         console.error('Error al manejar el evento del micrófono:', error);
-        // Si hay un error, asegurarse de que el estado sea coherente
         isMicroOff = true;
         updateIcons();
     }
