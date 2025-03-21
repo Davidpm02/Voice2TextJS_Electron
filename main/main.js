@@ -19,6 +19,8 @@ function createWindow() {
         maxHeight: 710,
         minWidth: 450,
         minHeight: 710,
+        frame: false, // Elimina la barra de título
+        titleBarStyle: 'hidden', // Oculta la barra de título
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,

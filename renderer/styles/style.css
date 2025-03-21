@@ -1,6 +1,7 @@
 body {
     background-color: #1e1e1e;
     transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+    -webkit-app-region: drag; /* Permite arrastrar la ventana */
 }
 
 .title {
@@ -214,6 +215,11 @@ body {
 
 .light_mode .transcription-text {
     color: #ffffff;
+}
+
+/* Evitar que los botones y elementos interactivos sean arrastables */
+button, input, .micro_btn, .toogle_display_btn {
+    -webkit-app-region: no-drag;
 }
 
 
