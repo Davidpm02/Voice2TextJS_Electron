@@ -1,5 +1,7 @@
 # Voice2TextJS - Transcriptor de Audio con Whisper.cpp
 
+<img src="https://i.imgur.com/DgJZx6h.png">
+
 Aplicación de escritorio desarrollada con Electron que permite transcribir audio a texto utilizando Whisper.cpp.
 
 ## 🚀 Características
