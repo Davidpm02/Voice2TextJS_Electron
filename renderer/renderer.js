@@ -34,12 +34,19 @@ let audioChunks = [];
 
 // Variables para la animación de ondas
 let waveAnimationId;
-const waves = Array(3).fill().map((_, i) => ({
-    amplitude: 20,
-    frequency: 0.02,
-    phase: i * Math.PI * 0.5,
-    y: 0
-}));
+
+// Modificar la definición inicial de waves para usar una función que devuelva ondas nuevas
+function createFreshWaves() {
+    return Array(3).fill().map((_, i) => ({
+        amplitude: 20,
+        frequency: 0.02,
+        phase: i * Math.PI * 0.5,
+        y: 0
+    }));
+}
+
+// Variable global para las ondas
+let waves = createFreshWaves();
 
 let currentStream = null; // Añadir esta variable global al inicio del archivo
 
@@ -445,18 +452,69 @@ function updateTranscriptionText() {
     textElement.textContent = 'Transcribiendo' + '.'.repeat(dots);
 }
 
-// Función para mostrar el estado de transcripción
+// Modificar la función showTranscriptionStatus
 function showTranscriptionStatus() {
     const status = document.getElementById('transcription-status');
     status.classList.remove('hidden');
     
+    // Reiniciar las ondas antes de comenzar
+    waves = createFreshWaves();
+    
     // Iniciar las animaciones
-    drawWaves();
+    const canvas = document.getElementById('waves-animation');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    
+    function animateWaves() {
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        const waveColors = isDarkMode ? [
+            'rgba(74, 144, 226, 0.3)',
+            'rgba(74, 144, 226, 0.5)',
+            'rgba(74, 144, 226, 0.7)'
+        ] : [
+            'rgba(255, 255, 255, 0.3)',
+            'rgba(255, 255, 255, 0.5)',
+            'rgba(255, 255, 255, 0.7)'
+        ];
+        
+        waves.forEach((wave, index) => {
+            ctx.beginPath();
+            ctx.strokeStyle = waveColors[index];
+            ctx.lineWidth = 2;
+            
+            for (let x = 0; x < width; x++) {
+                const y = height / 2 + 
+                         Math.sin(x * wave.frequency + wave.phase) * 
+                         wave.amplitude * 
+                         Math.sin(Date.now() * 0.0005);
+                
+                if (x === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+            wave.phase += 0.02;
+        });
+        
+        // Solo continuar la animación si el estado sigue visible
+        if (!status.classList.contains('hidden')) {
+            waveAnimationId = requestAnimationFrame(animateWaves);
+        }
+    }
+    
+    // Iniciar la animación de puntos
     const dotsInterval = setInterval(updateTranscriptionText, 500);
     
-    // Guardar referencias globalmente
-    window.transcriptionDotsInterval = dotsInterval;
-    window.transcriptionWaveAnimationId = waveAnimationId;
+    // Iniciar la animación de ondas
+    waveAnimationId = requestAnimationFrame(animateWaves);
     
     return {
         dotsInterval,
@@ -464,14 +522,28 @@ function showTranscriptionStatus() {
     };
 }
 
-// Función para ocultar el estado de transcripción
+// Modificar la función hideTranscriptionStatus
 function hideTranscriptionStatus(intervals) {
     const status = document.getElementById('transcription-status');
     status.classList.add('hidden');
     
     // Detener las animaciones
-    clearInterval(intervals.dotsInterval);
-    cancelAnimationFrame(intervals.waveAnimationId);
+    if (intervals?.dotsInterval) {
+        clearInterval(intervals.dotsInterval);
+    }
+    if (intervals?.waveAnimationId) {
+        cancelAnimationFrame(intervals.waveAnimationId);
+    }
+    
+    // Reiniciar las ondas con valores frescos
+    waves = createFreshWaves();
+    
+    // Limpiar el canvas
+    const canvas = document.getElementById('waves-animation');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 }
 
 // Función para dibujar las ondas
