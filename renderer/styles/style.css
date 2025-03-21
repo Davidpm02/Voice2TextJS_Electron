@@ -30,37 +30,57 @@ body {
     height: 500px;
 }
 
+/* Actualizar el contenedor de entrada */
 .input-container {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    position: fixed;
 }
 
+/* Actualizar el visualizador de audio */
 .audio-visualizer {
     width: 300px;
     height: 150px;
     background-color: transparent;
     border-radius: 10px;
-    margin-bottom: 20px;
+    position: fixed;
+    bottom: 120px; /* Ajusta esta distancia según necesites */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    transition: opacity 0.3s ease-out;
 }
 
+.audio-visualizer.hidden {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* Actualizar el botón del micrófono */
 .micro_btn {
-    background-image:url('../../src/icons/micro_off_dark_ico.png');
+    background-image: url('../../src/icons/micro_off_dark_ico.png');
     height: 80px;
     width: 80px;
     background-size: 80px 80px;
-    background-position:center;
-    border:none;
+    background-position: center;
+    border: none;
     border-radius: 50px;
     cursor: pointer;
     box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
     -webkit-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
     -moz-box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.55);
-    transition: all 0.3s ease-in-out;
+    transition: all 0.2s ease-in-out;
     position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
 }
 
 .micro_btn:active {
@@ -90,10 +110,11 @@ body {
     bottom: 20px;
     right: 10px;
     transition: background-image 0.3s ease-in-out;
+    z-index: 20;
 }
 
 .hidden {
-  display: none;
+    display: none !important;
 }
 
 /* Estilos para el modo claro */
@@ -146,9 +167,53 @@ body {
     display: block;
 }
 
-/* Ocultar el contenedor cuando no se use */
-.hidden {
-    display: none !important;
+.transcription-status {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 100;
+    padding: 20px;
+    border-radius: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.transcription-status.hidden {
+    display: none;
+}
+
+.waves-gif {
+    width: 200px;
+    height: 200px;
+}
+
+.transcription-text {
+    font-size: 1.2em;
+    color: #4a90e2;
+    font-weight: bold;
+    margin: 0;
+}
+
+#waves-animation {
+    border-radius: 5px;
+}
+
+/* Estilos para modo oscuro */
+.dark_mode .transcription-status {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Estilos para modo claro */
+.light_mode .transcription-status {
+    background-color: rgba(33, 33, 33, 0.9);
+}
+
+.light_mode .transcription-text {
+    color: #ffffff;
 }
 
 

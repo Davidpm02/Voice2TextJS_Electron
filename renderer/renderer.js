@@ -32,6 +32,15 @@ let bufferLength;
 let mediaRecorder;
 let audioChunks = [];
 
+// Variables para la animación de ondas
+let waveAnimationId;
+const waves = Array(3).fill().map((_, i) => ({
+    amplitude: 20,
+    frequency: 0.02,
+    phase: i * Math.PI * 0.5,
+    y: 0
+}));
+
 // Verificar si electronAPI está disponible
 if (!window.electronAPI) {
     console.error('Error: electronAPI no está disponible. Asegúrate de que el preload script se está cargando correctamente.');
@@ -71,8 +80,18 @@ if (window.electronAPI) {
 
     // Configurar el manejador de notificaciones
     window.electronAPI.onNotification((event, message) => {
-        
+        // Verificar si es la notificación de transcripción completada
         if (message === 'Se ha copiado la transcripción al portapapeles') {
+            // Ocultar el estado de transcripción
+            const status = document.getElementById('transcription-status');
+            if (status && !status.classList.contains('hidden')) {
+                hideTranscriptionStatus({
+                    dotsInterval: window.transcriptionDotsInterval,
+                    waveAnimationId: window.transcriptionWaveAnimationId
+                });
+            }
+
+            // Reproducir sonido de éxito
             if (successSound) {
                 successSound.currentTime = 0;
                 successSound.volume = 0.5;
@@ -81,6 +100,7 @@ if (window.electronAPI) {
                 });
             }
         } else {
+            // Para otros tipos de notificaciones
             if (errorSound) {
                 errorSound.currentTime = 0;
                 errorSound.volume = 0.7;
@@ -90,6 +110,7 @@ if (window.electronAPI) {
             }
         }
 
+        // Mostrar la notificación después de ocultar el estado de transcripción
         showNotification(message);
     });
 }
@@ -179,11 +200,23 @@ async function startAudio() {
             const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
             const fileName = getFileName();
             
-            // Guardar el archivo usando el proceso principal
-            await saveAndConvertAudio(audioBlob, fileName);
+            // Mostrar el estado de transcripción
+            const intervals = showTranscriptionStatus();
             
-            // Limpiar
-            audioChunks = [];
+            try {
+                // Guardar el archivo usando el proceso principal
+                await saveAndConvertAudio(audioBlob, fileName);
+                
+                // No ocultamos aquí el estado de transcripción
+                // Se ocultará cuando se reciba la notificación de éxito
+                
+                // Limpiar
+                audioChunks = [];
+            } catch (error) {
+                // Si hay un error, ocultamos el estado y mostramos el error
+                hideTranscriptionStatus(intervals);
+                console.error('Error durante la transcripción:', error);
+            }
         };
 
         // Iniciar la grabación
@@ -202,6 +235,10 @@ async function startAudio() {
 
         microphone = audioContext.createMediaStreamSource(stream);
         microphone.connect(analyser);
+        
+        // Mostrar el canvas del visualizador
+        const visualizer = document.getElementById('visualizer');
+        visualizer.classList.remove('hidden');
         
         // Iniciar la animación
         drawVisualizer();
@@ -231,16 +268,22 @@ function stopAudio() {
         microphone.disconnect();
         microphone = null;
     }
+
+    // Limpiar y ocultar el canvas
+    const visualizer = document.getElementById('visualizer');
+    const ctx = visualizer.getContext('2d');
+    
+    // Limpiar completamente el canvas
+    ctx.clearRect(0, 0, visualizer.width, visualizer.height);
+    
+    // Ocultar el canvas
+    visualizer.classList.add('hidden');
+
+    // Detener la animación
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
     }
-    if (audioContext) {
-        audioContext.suspend();
-    }
-    // Limpiar el canvas
-    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-    console.log('Audio detenido');
 }
 
 // Función para dibujar el visualizador
@@ -337,18 +380,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Evento para el botón de micrófono
 microBtn.addEventListener('click', async () => {
-    isMicroOff = !isMicroOff;
-    
-    if (isDarkMode) {
-        microBtn.style.backgroundImage = isMicroOff ? `url(${microOffDarkIcon})` : `url(${microOnDarkIcon})`;
-    } else {
-        microBtn.style.backgroundImage = isMicroOff ? `url(${microOffLightIcon})` : `url(${microOnLightIcon})`;
-    }
-    
-    if (!isMicroOff) {
-        await startAudio();
-    } else {
-        stopAudio();
+    try {
+        if (isMicroOff) {
+            // Intentar iniciar el audio antes de cambiar el estado
+            await startAudio();
+            // Si startAudio fue exitoso, actualizamos el estado y los iconos
+            isMicroOff = false;
+        } else {
+            stopAudio();
+            isMicroOff = true;
+        }
+
+        // Actualizar los iconos usando la función centralizada
+        updateIcons();
+        
+    } catch (error) {
+        console.error('Error al manejar el evento del micrófono:', error);
+        // Si hay un error, asegurarse de que el estado sea coherente
+        isMicroOff = true;
+        updateIcons();
     }
 });
 
@@ -357,3 +407,94 @@ window.addEventListener('show-app-notification', (event) => {
     console.log('Evento show-app-notification recibido en renderer:', event.detail);
     showNotification(event.detail);
 });
+
+// Función para actualizar el texto de transcripción
+function updateTranscriptionText() {
+    const textElement = document.querySelector('.transcription-text');
+    if (!textElement) return;
+
+    let dots = textElement.textContent.split('.').length - 1;
+    dots = (dots % 3) + 1;
+    textElement.textContent = 'Transcribiendo' + '.'.repeat(dots);
+}
+
+// Función para mostrar el estado de transcripción
+function showTranscriptionStatus() {
+    const status = document.getElementById('transcription-status');
+    status.classList.remove('hidden');
+    
+    // Iniciar las animaciones
+    drawWaves();
+    const dotsInterval = setInterval(updateTranscriptionText, 500);
+    
+    // Guardar referencias globalmente
+    window.transcriptionDotsInterval = dotsInterval;
+    window.transcriptionWaveAnimationId = waveAnimationId;
+    
+    return {
+        dotsInterval,
+        waveAnimationId
+    };
+}
+
+// Función para ocultar el estado de transcripción
+function hideTranscriptionStatus(intervals) {
+    const status = document.getElementById('transcription-status');
+    status.classList.add('hidden');
+    
+    // Detener las animaciones
+    clearInterval(intervals.dotsInterval);
+    cancelAnimationFrame(intervals.waveAnimationId);
+}
+
+// Función para dibujar las ondas
+function drawWaves() {
+    const canvas = document.getElementById('waves-animation');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Limpiar el canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Definir colores según el modo
+    const waveColors = isDarkMode ? [
+        'rgba(74, 144, 226, 0.3)',
+        'rgba(74, 144, 226, 0.5)',
+        'rgba(74, 144, 226, 0.7)'
+    ] : [
+        'rgba(255, 255, 255, 0.3)',
+        'rgba(255, 255, 255, 0.5)',
+        'rgba(255, 255, 255, 0.7)'
+    ];
+
+    // Actualizar y dibujar cada onda
+    waves.forEach((wave, index) => {
+        ctx.beginPath();
+        ctx.strokeStyle = waveColors[index];
+        ctx.lineWidth = 2;
+
+        // Dibujar la onda
+        for (let x = 0; x < width; x++) {
+            const y = height/2 + 
+                     Math.sin(x * wave.frequency + wave.phase) * 
+                     wave.amplitude * 
+                     Math.sin(Date.now() * 0.001);
+
+            if (x === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+
+        ctx.stroke();
+        
+        // Actualizar la fase para la animación
+        wave.phase += 0.05;
+    });
+
+    waveAnimationId = requestAnimationFrame(drawWaves);
+}
