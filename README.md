@@ -60,6 +60,8 @@ cmake --build . --config Release
 2. Descargar el modelo deseado desde [Hugging Face](https://huggingface.co/ggerganov/whisper.cpp).
 3. Colocar el modelo (por ejemplo, `ggml-small-q8_0.bin`) en el directorio `models`.
 
+> ¡OJO! El cambio de modelo implica realizar cambios internos en el código del proyecto (a menos que se decida nombrar al nuevo modelo como `ggml-small-q8_0.bin`). Se recomienda buscar y sustituir todas las referencias al modelo `ggml-small-q8_0.bin` por el nombre del modelo que hayas descargado.
+
 ### 4. Instalar dependencias
 
 ```bash
