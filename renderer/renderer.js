@@ -41,6 +41,8 @@ const waves = Array(3).fill().map((_, i) => ({
     y: 0
 }));
 
+let currentStream = null; // Añadir esta variable global al inicio del archivo
+
 // Verificar si electronAPI está disponible
 if (!window.electronAPI) {
     console.error('Error: electronAPI no está disponible. Asegúrate de que el preload script se está cargando correctamente.');
@@ -180,7 +182,7 @@ async function startAudio() {
             await audioContext.resume();
         }
 
-        // Intentar obtener acceso al micrófono antes de cambiar cualquier estado
+        // Obtener nuevo stream
         const stream = await navigator.mediaDevices.getUserMedia({ 
             audio: {
                 echoCancellation: true,
@@ -189,13 +191,19 @@ async function startAudio() {
             } 
         });
 
-        // Solo si llegamos aquí (no hay error), configuramos el audio
+        // Guardar referencia al stream actual
+        currentStream = stream;
+
+        // Configurar nuevo MediaRecorder
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
             audioChunks.push(event.data);
         };
+
+        // Iniciar la grabación inmediatamente
+        mediaRecorder.start();
 
         mediaRecorder.onstop = async () => {
             const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
@@ -220,17 +228,13 @@ async function startAudio() {
             }
         };
 
-        if (!analyser) {
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            bufferLength = analyser.frequencyBinCount;
-            dataArray = new Uint8Array(bufferLength);
-        }
+        // Configurar nuevo analyser
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
 
-        if (microphone) {
-            microphone.disconnect();
-        }
-
+        // Crear y conectar nueva fuente de micrófono
         microphone = audioContext.createMediaStreamSource(stream);
         microphone.connect(analyser);
         
@@ -243,11 +247,10 @@ async function startAudio() {
         
         console.log('Audio iniciado correctamente');
 
-        // Solo aquí, después de que todo sea exitoso, cambiamos el estado del micrófono
         isMicroOff = false;
-        updateIcons(); // Actualizamos los iconos aquí
+        updateIcons();
 
-        return true; // Indicamos éxito
+        return true;
 
     } catch (error) {
         console.error('Error al acceder al micrófono:', error);
@@ -267,29 +270,41 @@ async function startAudio() {
 
 // Función para detener la captura de audio
 function stopAudio() {
+    // Detener la grabación si está activa
     if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
     }
     
+    // Desconectar el micrófono
     if (microphone) {
         microphone.disconnect();
         microphone = null;
     }
 
-    // Limpiar y ocultar el canvas
+    // Detener todas las pistas del stream
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+    }
+
+    // Limpiar el visualizador
     const visualizer = document.getElementById('visualizer');
     const ctx = visualizer.getContext('2d');
-    
-    // Limpiar completamente el canvas
     ctx.clearRect(0, 0, visualizer.width, visualizer.height);
-    
-    // Ocultar el canvas
     visualizer.classList.add('hidden');
 
     // Detener la animación
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
+    }
+
+    // Limpiar el analizador
+    analyser = null;
+    
+    // Suspender el contexto de audio
+    if (audioContext) {
+        audioContext.suspend();
     }
 }
 

@@ -26,6 +26,9 @@ function createWindow() {
             sandbox: false
         }
     });
+    
+    // Abro las devtools
+    win.webContents.openDevTools();
 
     win.loadFile('renderer/index.html');
     win.webContents.on('did-finish-load', () => {
