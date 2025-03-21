@@ -13,6 +13,8 @@ Aplicación de escritorio desarrollada con Electron que permite transcribir audi
 - Copia automática al portapapeles.
 - Interfaz minimalista y fácil de usar.
 
+https://github.com/user-attachments/assets/a937409e-cc24-4655-8b78-28a7003c5e38
+
 ## 📋 Prerrequisitos
 
 - [Node.js](https://nodejs.org/) (versión 20 o superior)
